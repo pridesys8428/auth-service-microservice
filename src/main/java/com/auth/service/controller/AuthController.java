@@ -1,15 +1,11 @@
 package com.auth.service.controller;
 
-import com.auth.service.dto.LoginRequest;
-import com.auth.service.dto.RefreshTokenRequest;
-import com.auth.service.dto.RegisterRequest;
+import com.auth.service.dto.*;
+import com.auth.service.entity.User;
 import com.auth.service.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -37,5 +33,16 @@ public class AuthController {
             @RequestBody RefreshTokenRequest request) {
 
         return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity<?> verify(@RequestBody VerifyRequest request) {
+        return ResponseEntity.ok(authService.verifyEmail(request));
+    }
+
+    @PostMapping("/verify-req")
+    public ResponseEntity<?> verifyReq(@RequestBody OtpRequest request) {
+        authService.sendOTP(request);
+        return ResponseEntity.ok("Verification Code Sent");
     }
 }
