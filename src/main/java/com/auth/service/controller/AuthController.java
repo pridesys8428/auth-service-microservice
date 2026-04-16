@@ -1,11 +1,11 @@
 package com.auth.service.controller;
 
 import com.auth.service.dto.*;
-import com.auth.service.entity.User;
 import com.auth.service.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
@@ -16,7 +16,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(
-            @RequestBody RegisterRequest request) {
+            @Valid @RequestBody RegisterRequest request) {
 
         return ResponseEntity.ok(authService.register(request));
     }
@@ -36,12 +36,12 @@ public class AuthController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<?> verify(@RequestBody VerifyRequest request) {
+    public ResponseEntity<?> verify(@Valid @RequestBody VerifyRequest request) {
         return ResponseEntity.ok(authService.verifyEmail(request));
     }
 
     @PostMapping("/verify-req")
-    public ResponseEntity<?> verifyReq(@RequestBody OtpRequest request) {
+    public ResponseEntity<?> verifyReq(@Valid @RequestBody OtpRequest request) {
         authService.sendOTP(request);
         return ResponseEntity.ok("Verification Code Sent");
     }

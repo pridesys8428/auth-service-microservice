@@ -1,8 +1,16 @@
 package com.auth.service.dto;
 
 import lombok.Data;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 @Data
 public class VerifyRequest {
-    private String VerificationToken;
+
+    @NotBlank
+    @Email
+    private String email;
+
+    @NotBlank
+    private String verificationToken;
 }

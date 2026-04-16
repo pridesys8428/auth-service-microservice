@@ -1,8 +1,19 @@
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: pridesys.8428@gmail.com
+    password: vzkv dplo kxwq vlbm
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   application:
     name: auth-service
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/auth_db}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/hospital_db}
     username: ${DB_USER:postgres}
     password: ${DB_PASSWORD:0000}
   jpa:

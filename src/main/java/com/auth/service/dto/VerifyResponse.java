@@ -7,4 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class VerifyResponse {
     private String message;
+    private String accessToken;
+    private String refreshToken;
+    private String username;
 }

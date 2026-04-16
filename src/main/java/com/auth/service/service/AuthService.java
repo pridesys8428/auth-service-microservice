@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 
@@ -31,13 +32,14 @@ public class AuthService {
     private final EmailService emailService;
     private final VerificationService verificationService;
 
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
 
         User existingUser = userRepository.findByEmail(request.getEmail());
 
-        if (existingUser != null && !existingUser.isVerified()) {
-            throw new EmailVerificationException("Verify your email first");
-        }
+//        if (existingUser != null && !existingUser.isVerified()) {
+//            throw new EmailVerificationException("Verify your email first");
+//        }
 
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new DuplicateUserException("userid already exist");
@@ -69,33 +71,51 @@ public class AuthService {
         VerificationToken token = verificationService
                 .createToken(user, VerificationType.EMAIL);
 
-        emailService.sendVerificationEmail(user.getEmail(), token.getToken());
+        emailService.sendOtpEmail(user.getEmail(), token.getToken());
     }
 
     public VerifyResponse verifyEmail(VerifyRequest request) {
 
-        User user = verificationService.verifyToken(request.getVerificationToken(), VerificationType.EMAIL);
+        User user = userRepository
+                .findByEmail(request.getEmail());
 
-        user.setVerified(true);
-        userRepository.save(user);
-        return new VerifyResponse("Email Verification Successful");
+        if (user == null) {
+            throw new UserNotFoundException("User Not Found");
+        }
+
+        User verifiedUser = verificationService.verifyToken(
+                user,
+                request.getVerificationToken(),
+                VerificationType.EMAIL);
+
+        verifiedUser.setVerified(true);
+        userRepository.save(verifiedUser);
+
+        String accessToken = jwtTokenProvider.generateToken(verifiedUser.getUsername());
+        String refreshToken = refreshTokenService
+                .createRefreshToken(verifiedUser)
+                .getToken();
+
+        return new VerifyResponse("Email Verification Successful", accessToken, refreshToken, verifiedUser.getUsername());
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest request) {
 
         User user = userRepository
                 .findByUsername(request.getUsername())
-                .orElseThrow();
-
-        if (!user.isVerified()) {
-            throw new EmailVerificationException("Please verify your email first");
-        }
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         if (!passwordEncoder.matches(
                 request.getPassword(),
                 user.getPassword())) {
 
-            throw new RuntimeException("Invalid credentials");
+            throw new RuntimeException("Invalid username or password");
+        }
+
+        if (!user.isVerified()) {
+            createVerificationToken(user);
+            throw new EmailVerificationException("Please verify your email first, a verification email has been sent to your registered email");
         }
 
         String accessToken = jwtTokenProvider.generateToken(user.getUsername());
@@ -105,6 +125,33 @@ public class AuthService {
 
         return new AuthResponse(accessToken, refreshToken, user.getUsername());
     }
+
+//    public AuthResponse login(LoginRequest request) {
+//
+//        User user = userRepository
+//                .findByUsername(request.getUsername())
+//                .orElseThrow();
+//
+//        if (!user.isVerified()) {
+//            throw new EmailVerificationException("Please verify your email first");
+//        }
+//
+//        createVerificationToken(user);
+//
+//        if (!passwordEncoder.matches(
+//                request.getPassword(),
+//                user.getPassword())) {
+//
+//            throw new RuntimeException("Invalid credentials");
+//        }
+//
+//        String accessToken = jwtTokenProvider.generateToken(user.getUsername());
+//        String refreshToken = refreshTokenService
+//                .createRefreshToken(user)
+//                .getToken();
+//
+//        return new AuthResponse(accessToken, refreshToken, user.getUsername());
+//    }
 
     public AuthResponse refreshToken(String refreshToken) {
 
@@ -120,6 +167,7 @@ public class AuthService {
         return new AuthResponse(accessToken, newRefreshToken, user.getUsername());
     }
 
+    @Transactional
     public void sendOTP(OtpRequest request) {
         User user = userRepository
                 .findByEmail(request.getEmail());
