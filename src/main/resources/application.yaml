@@ -1,4 +1,14 @@
 spring:
+  application:
+    name: auth-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
   mail:
     host: smtp.gmail.com
     port: 587
@@ -10,16 +20,6 @@ spring:
           auth: true
           starttls:
             enable: true
-  application:
-    name: auth-service
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
 
 server:
   port: 8081
@@ -28,3 +28,13 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: 900000
   refresh-expiration: 2592000000
+
+#  EUREKA_URL=http://eureka-server:8761/eureka/
+
+# Eureka must be at ROOT level, not under spring:
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${EUREKA_URL}
